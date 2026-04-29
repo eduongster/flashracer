@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashRacer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d2e;
+    --card:      #22263a;
+    --border:    #2e3250;
+    --accent:    #f7c948;
+    --accent2:   #ff6b6b;
+    --accent3:   #6bffb8;
+    --text:      #eef0ff;
+    --muted:     #8890c0;
+    --radius:    14px;
+    --track-h:   54px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    padding: 18px 32px;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: 'Bangers', cursive;
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 3px 3px 0 #7a5c00;
+    line-height: 1;
+  }
+  header .subtitle { color: var(--muted); font-size: .85rem; }
+  header .nav { margin-left: auto; display: flex; gap: 10px; }
+  .btn {
+    padding: 9px 20px;
+    border-radius: 50px;
+    border: none;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--accent); color: #1a1200; }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1.5px solid var(--border); }
+  .btn-danger { background: var(--accent2); color: #fff; }
+  .btn-success { background: var(--accent3); color: #0a2018; }
+
+  /* ── Screens ── */
+  .screen { display: none; width: 100%; max-width: 860px; padding: 32px 20px; }
+  .screen.active { display: block; }
+
+  /* ── HOME ── */
+  #homeScreen { text-align: center; }
+  #homeScreen h2 {
+    font-family: 'Bangers', cursive;
+    font-size: 3.5rem;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 4px 4px 0 #7a5c00;
+    margin-bottom: 8px;
+  }
+  #homeScreen p { color: var(--muted); margin-bottom: 32px; font-size: 1.05rem; }
+
+  .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 16px; margin: 28px 0; }
+  .deck-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s, transform .15s;
+    position: relative;
+  }
+  .deck-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .deck-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+  .deck-card .meta { font-size: .8rem; color: var(--muted); }
+  .deck-card .del-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 1.1rem; padding: 2px 6px;
+    border-radius: 6px; transition: color .15s, background .15s;
+  }
+  .deck-card .del-btn:hover { color: var(--accent2); background: rgba(255,107,107,.1); }
+  .no-decks { color: var(--muted); font-style: italic; padding: 20px 0; }
+
+  /* ── EDITOR ── */
+  #editorScreen h2 { font-family: 'Bangers', cursive; font-size: 2rem; letter-spacing: 2px; color: var(--accent); margin-bottom: 20px; }
+  .field-group { margin-bottom: 18px; }
+  label { display: block; font-weight: 700; font-size: .85rem; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  input[type=text], textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input[type=text]:focus, textarea:focus { border-color: var(--accent); }
+
+  .card-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .card-item {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .card-item span { font-size: .9rem; }
+  .card-item .q { color: var(--accent); font-weight: 700; }
+  .card-item .a { color: var(--accent3); }
+  .card-item button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; transition: color .15s; }
+  .card-item button:hover { color: var(--accent2); }
+
+  .add-card-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .editor-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+
+  /* ── GAME ── */
+  #gameScreen { max-width: 900px; }
+
+  .progress-section { margin-bottom: 28px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
+  .track-outer {
+    background: var(--card);
+    border-radius: 50px;
+    height: var(--track-h);
+    border: 2px solid var(--border);
+    position: relative;
+    overflow: visible;
+  }
+  .track-fill {
+    height: 100%;
+    border-radius: 50px;
+    background: linear-gradient(90deg, var(--accent) 0%, #ffaa00 100%);
+    transition: width .5s cubic-bezier(.34,1.56,.64,1);
+    min-width: 0%;
+    position: relative;
+  }
+  .track-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50px;
+    background: linear-gradient(180deg, rgba(255,255,255,.18) 0%, transparent 60%);
+  }
+  .avatar-wrap {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: left .5s cubic-bezier(.34,1.56,.64,1);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .avatar-emoji {
+    font-size: 2.1rem;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.5));
+    animation: bounce 0.6s infinite alternate ease-in-out;
+  }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+
+  .start-flag, .finish-flag {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.6rem;
+    z-index: 5;
+  }
+  .start-flag { left: 4px; }
+  .finish-flag { right: 4px; }
+
+  /* ── Countdown ── */
+  .countdown-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,11,20,.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+  .countdown-num {
+    font-family: 'Bangers', cursive;
+    font-size: 10rem;
+    color: var(--accent);
+    text-shadow: 0 0 60px rgba(247,201,72,.5), 6px 6px 0 #7a5c00;
+    animation: pop .9s ease-out;
+  }
+  @keyframes pop { 0% { transform: scale(2); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ── Flashcard ── */
+  .flashcard-area { margin-bottom: 24px; }
+  .card-number { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 700; }
+  .question-box {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 16px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+    transition: border-color .3s;
+  }
+  .question-box.shake {
+    animation: shake .4s ease;
+    border-color: var(--accent2) !important;
+  }
+  .question-box.correct { border-color: var(--accent3) !important; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+  }
+
+  .answer-row { display: flex; gap: 10px; align-items: center; }
+  .answer-input {
+    flex: 1;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .answer-input:focus { border-color: var(--accent); }
+  .answer-input.correct { border-color: var(--accent3); background: rgba(107,255,184,.07); }
+  .answer-input.wrong { border-color: var(--accent2); }
+
+  .game-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .meta-chip {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    padding: 7px 16px;
+    font-size: .85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .meta-chip .val { color: var(--accent); }
+
+  .penalty-bar {
+    background: var(--card);
+    border: 1.5px solid var(--accent2);
+    border-radius: 10px;
+    padding: 10px 18px;
+    color: var(--accent2);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    display: none;
+    animation: fadeIn .3s;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+  .feedback-msg {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-height: 28px;
+    margin-bottom: 10px;
+    transition: color .2s;
+  }
+
+  /* ── Results ── */
+  #resultsScreen { text-align: center; }
+  #resultsScreen h2 { font-family: 'Bangers', cursive; font-size: 3rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 8px; text-shadow: 3px 3px 0 #7a5c00; }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; margin: 28px 0; }
+  .result-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color .3s;
+  }
+  .result-card:hover { border-color: var(--accent); }
+  .result-card .stat-val { font-family: 'Bangers', cursive; font-size: 2.5rem; color: var(--accent); letter-spacing: 2px; }
+  .result-card .stat-label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  .history-section { margin-top: 32px; text-align: left; }
+  .history-section h3 { font-family: 'Bangers', cursive; font-size: 1.5rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+  .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .history-row {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: .88rem;
+  }
+  .history-row .hr-date { color: var(--muted); }
+  .history-row .hr-acc { color: var(--accent3); font-weight: 700; }
+
+  /* ── Avatar picker ── */
+  .avatar-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; justify-content: center; }
+  .avatar-opt {
+    font-size: 2.4rem;
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    width: 58px; height: 58px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card);
+    transition: border-color .15s, transform .15s;
+  }
+  .avatar-opt:hover { transform: scale(1.15); }
+  .avatar-opt.selected { border-color: var(--accent); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── Responsive ── */
+  @media (max-width:600px) {
+    .add-card-row { grid-template-columns: 1fr; }
+    .card-item { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.6rem; }
+  }
+
+  .separator { width: 100%; height: 1px; background: var(--border); margin: 24px 0; }
+  .section-title { font-family: 'Bangers', cursive; font-size: 1.3rem; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
+  .game-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚡ FLASHRACER</h1>
+    <div class="subtitle">Study faster. Learn smarter.</div>
+  </div>
+  <nav class="nav">
+    <button class="btn btn-secondary" onclick="showScreen('homeScreen')">🏠 Home</button>
+    <button class="btn btn-primary" onclick="showScreen('editorScreen'); initEditor()">✏️ New Deck</button>
+  </nav>
+</header>
+
+<!-- ══ HOME ═══════════════════════════════════════════ -->
+<div id="homeScreen" class="screen active">
+  <br>
+  <h2>YOUR DECKS</h2>
+  <p>Select a deck to play, or create a new one to get started.</p>
+
+  <div class="section-title">CHOOSE YOUR RACER</div>
+  <div class="avatar-row" id="avatarPicker"></div>
+
+  <div class="separator"></div>
+  <div class="section-title">SAVED DECKS</div>
+  <div id="deckGrid" class="deck-grid"></div>
+  <button class="btn btn-primary" onclick="showScreen('editorScreen'); initEditor()" style="margin-top:8px;">＋ Create New Deck</button>
+</div>
+
+<!-- ══ EDITOR ═══════════════════════════════════════ -->
+<div id="editorScreen" class="screen">
+  <h2>✏️ DECK EDITOR</h2>
+
+  <div class="field-group">
+    <label>Deck Title</label>
+    <input type="text" id="deckTitle" placeholder="e.g. Biology Chapter 5…">
+  </div>
+
+  <div class="section-title">CARDS IN THIS DECK</div>
+  <div id="cardList" class="card-list"></div>
+
+  <div class="add-card-row">
+    <div class="field-group" style="margin:0">
+      <label>Question</label>
+      <input type="text" id="newQ" placeholder="What is…">
+    </div>
+    <div class="field-group" style="margin:0">
+      <label>Answer</label>
+      <input type="text" id="newA" placeholder="Answer…">
+    </div>
+    <div style="padding-top:22px">
+      <button class="btn btn-primary" onclick="addCard()">＋ Add</button>
+    </div>
+  </div>
+
+  <div class="editor-actions">
+    <button class="btn btn-success" onclick="saveDeck()">💾 Save Deck</button>
+    <button class="btn btn-primary" onclick="saveAndPlay()" id="savePlayBtn">🚀 Save & Play</button>
+    <button class="btn btn-secondary" onclick="showScreen('homeScreen')">← Back</button>
+  </div>
+</div>
+
+<!-- ══ GAME ════════════════════════════════════════════ -->
+<div id="gameScreen" class="screen">
+  <div class="game-meta">
+    <div class="meta-chip">⏱ <span class="val" id="timerDisplay">0:00</span></div>
+    <div class="meta-chip">✅ <span class="val" id="correctCount">0</span> correct</div>
+    <div class="meta-chip">♻️ <span class="val" id="recycleCount">0</span> recycled</div>
+    <div class="meta-chip">📋 <span class="val" id="remainCount">0</span> remaining</div>
+  </div>
+
+  <!-- Progress Track -->
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>🏁 Race Progress</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="track-outer" id="trackOuter">
+      <div class="track-fill" id="trackFill" style="width:0%"></div>
+      <div class="avatar-wrap" id="avatarWrap" style="left:4%">
+        <span class="avatar-emoji" id="avatarEmoji">🐶</span>
+      </div>
+      <span class="start-flag">🚦</span>
+      <span class="finish-flag">🏆</span>
+    </div>
+  </div>
+
+  <!-- Penalty bar -->
+  <div class="penalty-bar" id="penaltyBar">⏳ Skip penalty — wait <span id="penaltyCount">10</span>s…</div>
+
+  <!-- Flashcard -->
+  <div class="flashcard-area">
+    <div class="card-number" id="cardNumber">Card 1 of 10</div>
+    <div class="question-box" id="questionBox">Loading…</div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+    <div class="answer-row">
+      <input class="answer-input" type="text" id="answerInput" placeholder="Type your answer and press Enter…" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="game-actions">
+    <button class="btn btn-secondary" onclick="skipCard()">⏭ Skip (10s penalty)</button>
+    <button class="btn btn-danger" onclick="endGame()">🛑 End Game</button>
+  </div>
+</div>
+
+<!-- ══ RESULTS ═════════════════════════════════════════ -->
+<div id="resultsScreen" class="screen">
+  <h2>🏆 RACE COMPLETE!</h2>
+  <p id="resultsDeckName" style="color:var(--muted);margin-bottom:12px;"></p>
+
+  <div class="results-grid">
+    <div class="result-card">
+      <div class="stat-val" id="resTime">—</div>
+      <div class="stat-label">Time Taken</div>
+    </div>
+    <div class="result-card">
+      <div class="stat-val" id="resAccuracy">—</div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="result-card">
+      <div class="stat-val" id="resCorrect">—</div>
+      <div class="stat-label">First-Try Correct</div>
+    </div>
+    <div class="result-card">
+      <div class="stat-val" id="resSkipped">—</div>
+      <div class="stat-label">Times Skipped</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="playAgain()">🔁 Play Again</button>
+    <button class="btn btn-secondary" onclick="showScreen('homeScreen')">🏠 Home</button>
+  </div>
+
+  <div class="history-section">
+    <h3>PAST RUNS</h3>
+    <div id="historyList" class="history-list"></div>
+  </div>
+</div>
+
+<!-- ══ COUNTDOWN ══════════════════════════════════════ -->
+<div class="countdown-overlay" id="countdownOverlay" style="display:none">
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+const AVATARS = ['🐶','🐱','🐯','🦊','🐺','🐸','🐼','🦁','🐻','🐨'];
+let selectedAvatar = '🐶';
+let currentDeck = null;
+let editDeck = null; // deck being edited (null = new)
+let editCards = [];
+
+let gameState = {
+  queue: [],
+  recycled: [],
+  totalCards: 0,
+  answered: 0,
+  correctFirst: 0,
+  skipped: 0,
+  wrongAttempts: {},
+  startTime: null,
+  timerInterval: null,
+  penaltyTimeout: null,
+  inPenalty: false,
+  active: false
+};
+
+// ── Screens ───────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'homeScreen') loadDecks();
+}
+
+// ── Avatar Picker ─────────────────────────────────────
+function initAvatarPicker() {
+  const container = document.getElementById('avatarPicker');
+  container.innerHTML = '';
+  AVATARS.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'avatar-opt' + (a === selectedAvatar ? ' selected' : '');
+    div.textContent = a;
+    div.onclick = () => {
+      selectedAvatar = a;
+      document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+    };
+    container.appendChild(div);
+  });
+}
+
+// ── Deck List ─────────────────────────────────────────
+async function loadDecks() {
+  const grid = document.getElementById('deckGrid');
+  try {
+    const res = await fetch('/api/decks');
+    const decks = await res.json();
+    if (!decks.length) {
+      grid.innerHTML = '<div class="no-decks">No decks yet — create one to start racing! 🚀</div>';
+      return;
+    }
+    grid.innerHTML = '';
+    decks.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'deck-card';
+      card.innerHTML = `
+        <button class="del-btn" title="Delete deck" onclick="deleteDeck(event,'${d.id}')">🗑</button>
+        <h3>${escHtml(d.title)}</h3>
+        <div class="meta">${d.cards.length} cards &nbsp;·&nbsp; ${new Date(d.updated).toLocaleDateString()}</div>
+      `;
+      card.onclick = (e) => { if (e.target.classList.contains('del-btn')) return; openDeck(d); };
+      grid.appendChild(card);
+    });
+  } catch(e) {
+    grid.innerHTML = '<div class="no-decks">Could not load decks.</div>';
+  }
+}
+
+async function deleteDeck(e, id) {
+  e.stopPropagation();
+  if (!confirm('Delete this deck?')) return;
+  await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+  loadDecks();
+}
+
+function openDeck(deck) {
+  currentDeck = deck;
+  startCountdown();
+}
+
+// ── Editor ────────────────────────────────────────────
+function initEditor(deck) {
+  editDeck = deck || null;
+  editCards = deck ? [...deck.cards] : [];
+  document.getElementById('deckTitle').value = deck ? deck.title : '';
+  renderCardList();
+}
+
+function renderCardList() {
+  const list = document.getElementById('cardList');
+  list.innerHTML = '';
+  if (!editCards.length) {
+    list.innerHTML = '<div class="no-decks">No cards yet — add some below.</div>';
+    return;
+  }
+  editCards.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'card-item';
+    row.innerHTML = `
+      <span class="q">Q: ${escHtml(c.question)}</span>
+      <span class="a">A: ${escHtml(c.answer)}</span>
+      <button onclick="removeCard(${i})">🗑</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addCard() {
+  const q = document.getElementById('newQ').value.trim();
+  const a = document.getElementById('newA').value.trim();
+  if (!q || !a) { alert('Please fill in both question and answer.'); return; }
+  editCards.push({ question: q, answer: a });
+  document.getElementById('newQ').value = '';
+  document.getElementById('newA').value = '';
+  document.getElementById('newQ').focus();
+  renderCardList();
+}
+
+function removeCard(i) {
+  editCards.splice(i, 1);
+  renderCardList();
+}
+
+// Enter key in new card fields
+document.getElementById('newA').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addCard();
+});
+
+async function saveDeck() {
+  const title = document.getElementById('deckTitle').value.trim();
+  if (!title) { alert('Please enter a deck title.'); return; }
+  if (!editCards.length) { alert('Add at least one card.'); return; }
+  const payload = {
+    id: editDeck ? editDeck.id : null,
+    title,
+    cards: editCards,
+    created: editDeck ? editDeck.created : new Date().toISOString()
+  };
+  const res = await fetch('/api/decks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const saved = await res.json();
+  editDeck = saved;
+  alert('Deck saved! ✅');
+  return saved;
+}
+
+async function saveAndPlay() {
+  const saved = await saveDeck();
+  if (saved) { currentDeck = saved; startCountdown(); }
+}
+
+// ── Countdown ─────────────────────────────────────────
+function startCountdown() {
+  showScreen('gameScreen');
+  const overlay = document.getElementById('countdownOverlay');
+  const numEl = document.getElementById('countdownNum');
+  overlay.style.display = 'flex';
+  let n = 3;
+  numEl.textContent = n;
+  // Trigger animation restart
+  numEl.style.animation = 'none';
+  requestAnimationFrame(() => { numEl.style.animation = ''; });
+
+  const tick = setInterval(() => {
+    n--;
+    if (n > 0) {
+      numEl.textContent = n;
+      numEl.style.animation = 'none';
+      requestAnimationFrame(() => { numEl.style.animation = 'pop .9s ease-out'; });
+    } else {
+      clearInterval(tick);
+      numEl.textContent = 'GO!';
+      numEl.style.animation = 'none';
+      requestAnimationFrame(() => { numEl.style.animation = 'pop .9s ease-out'; });
+      setTimeout(() => { overlay.style.display = 'none'; startGame(); }, 800);
+    }
+  }, 1000);
+}
+
+// ── Game ──────────────────────────────────────────────
+function startGame() {
+  const cards = [...currentDeck.cards];
+  // Shuffle
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  gameState = {
+    queue: cards,
+    recycled: [],
+    totalCards: cards.length,
+    answered: 0,
+    correctFirst: 0,
+    skipped: 0,
+    wrongAttempts: {},
+    startTime: Date.now(),
+    timerInterval: setInterval(updateTimer, 1000),
+    penaltyTimeout: null,
+    inPenalty: false,
+    active: true
+  };
+  document.getElementById('avatarEmoji').textContent = selectedAvatar;
+  updateProgress();
+  updateMeta();
+  showNextCard();
+
+  const input = document.getElementById('answerInput');
+  input.addEventListener('keydown', handleAnswerKey);
+  input.focus();
+}
+
+function handleAnswerKey(e) {
+  if (e.key === 'Enter') submitAnswer();
+}
+
+function showNextCard() {
+  // Take from recycled if queue exhausted
+  if (!gameState.queue.length && gameState.recycled.length) {
+    gameState.queue = [...gameState.recycled];
+    gameState.recycled = [];
+    // Shuffle recycled
+    for (let i = gameState.queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gameState.queue[i], gameState.queue[j]] = [gameState.queue[j], gameState.queue[i]];
+    }
+  }
+  if (!gameState.queue.length) { endGame(); return; }
+
+  const card = gameState.queue[0];
+  const idx = gameState.totalCards - gameState.queue.length - gameState.recycled.length;
+
+  document.getElementById('questionBox').textContent = card.question;
+  document.getElementById('questionBox').className = 'question-box';
+  document.getElementById('cardNumber').textContent = `Card ${gameState.answered + 1} of ${gameState.totalCards + gameState.recycled.length}`;
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').className = 'answer-input';
+  document.getElementById('feedbackMsg').textContent = '';
+  document.getElementById('feedbackMsg').style.color = '';
+  document.getElementById('answerInput').focus();
+  updateMeta();
+}
+
+function submitAnswer() {
+  if (!gameState.active || gameState.inPenalty) return;
+  const card = gameState.queue[0];
+  const input = document.getElementById('answerInput');
+  const val = input.value.trim();
+  if (!val) return;
+
+  const correct = normalize(val) === normalize(card.answer);
+  const cardKey = card.question;
+
+  if (correct) {
+    input.className = 'answer-input correct';
+    document.getElementById('questionBox').className = 'question-box correct';
+    document.getElementById('feedbackMsg').textContent = '✅ Correct!';
+    document.getElementById('feedbackMsg').style.color = 'var(--accent3)';
+
+    if (!gameState.wrongAttempts[cardKey]) gameState.correctFirst++;
+    gameState.answered++;
+    gameState.queue.shift();
+    updateProgress();
+    updateMeta();
+
+    if (!gameState.queue.length && !gameState.recycled.length) {
+      setTimeout(() => endGame(), 600);
+    } else {
+      setTimeout(() => showNextCard(), 700);
+    }
+  } else {
+    input.className = 'answer-input wrong';
+    document.getElementById('questionBox').className = 'question-box shake';
+    document.getElementById('feedbackMsg').textContent = '❌ Try again!';
+    document.getElementById('feedbackMsg').style.color = 'var(--accent2)';
+    if (!gameState.wrongAttempts[cardKey]) gameState.wrongAttempts[cardKey] = 0;
+    gameState.wrongAttempts[cardKey]++;
+    input.value = '';
+    setTimeout(() => { input.className = 'answer-input'; document.getElementById('questionBox').className = 'question-box'; }, 600);
+  }
+}
+
+function skipCard() {
+  if (!gameState.active || gameState.inPenalty) return;
+  const card = gameState.queue.shift();
+  gameState.recycled.push(card);
+  gameState.skipped++;
+  updateMeta();
+
+  // 10s penalty
+  gameState.inPenalty = true;
+  document.getElementById('answerInput').disabled = true;
+  const bar = document.getElementById('penaltyBar');
+  bar.style.display = 'block';
+  let secs = 10;
+  document.getElementById('penaltyCount').textContent = secs;
+  const tick = setInterval(() => {
+    secs--;
+    document.getElementById('penaltyCount').textContent = secs;
+    if (secs <= 0) {
+      clearInterval(tick);
+      bar.style.display = 'none';
+      gameState.inPenalty = false;
+      document.getElementById('answerInput').disabled = false;
+      showNextCard();
+    }
+  }, 1000);
+}
+
+function updateProgress() {
+  const total = gameState.totalCards;
+  const done = gameState.answered;
+  const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+  document.getElementById('trackFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  // Avatar: starts at 4%, ends at 96%
+  const avatarPct = 4 + (pct / 100) * 92;
+  document.getElementById('avatarWrap').style.left = avatarPct + '%';
+}
+
+function updateMeta() {
+  document.getElementById('correctCount').textContent = gameState.answered;
+  document.getElementById('recycleCount').textContent = gameState.recycled.length;
+  document.getElementById('remainCount').textContent = gameState.queue.length;
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('timerDisplay').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+async function endGame() {
+  gameState.active = false;
+  clearInterval(gameState.timerInterval);
+  const input = document.getElementById('answerInput');
+  input.removeEventListener('keydown', handleAnswerKey);
+
+  const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  const timeStr = `${m}:${s.toString().padStart(2,'0')}`;
+  const total = gameState.totalCards;
+  const acc = total ? Math.round((gameState.correctFirst / total) * 100) : 0;
+  const completed = gameState.answered >= total;
+
+  // Save stats
+  if (currentDeck) {
+    await fetch('/api/stats', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        deckId: currentDeck.id,
+        timeTaken: elapsed,
+        accuracy: acc,
+        totalCards: total,
+        correctFirst: gameState.correctFirst,
+        skipped: gameState.skipped,
+        completed
+      })
+    });
+  }
+
+  showResults(timeStr, acc, completed);
+}
+
+async function showResults(timeStr, acc, completed) {
+  showScreen('resultsScreen');
+  document.getElementById('resultsDeckName').textContent = currentDeck ? `"${currentDeck.title}"` : '';
+  document.getElementById('resTime').textContent = timeStr;
+  document.getElementById('resAccuracy').textContent = acc + '%';
+  document.getElementById('resCorrect').textContent = gameState.correctFirst + '/' + gameState.totalCards;
+  document.getElementById('resSkipped').textContent = gameState.skipped;
+
+  // Load history
+  if (currentDeck) {
+    const res = await fetch('/api/stats');
+    const allStats = await res.json();
+    const history = (allStats[currentDeck.id] || []).slice().reverse().slice(0, 10);
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    if (!history.length) { list.innerHTML = '<div class="no-decks">No past runs yet.</div>'; }
+    history.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      const m = Math.floor(h.timeTaken/60), s = h.timeTaken%60;
+      row.innerHTML = `
+        <span class="hr-date">${new Date(h.date).toLocaleString()}</span>
+        <span>${m}:${s.toString().padStart(2,'0')}</span>
+        <span class="hr-acc">${h.accuracy}%</span>
+        <span>${h.completed ? '✅' : '⏹'}</span>
+      `;
+      list.appendChild(row);
+    });
+  }
+}
+
+function playAgain() {
+  if (currentDeck) startCountdown();
+}
+
+// ── Utils ─────────────────────────────────────────────
+function normalize(str) {
+  return str.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────
+initAvatarPicker();
+loadDecks();
+</script>
+</body>
+</html>
